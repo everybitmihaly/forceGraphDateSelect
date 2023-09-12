@@ -24,3 +24,7 @@ rect.selection {
 #labelright {
   text-anchor: start;
 }
+
+.node-label {
+  font-size: 8px;
+}

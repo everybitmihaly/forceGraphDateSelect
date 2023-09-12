@@ -39,7 +39,6 @@ function ForceGraph({
   const R = typeof nodeRadius !== "function" ? null : d3.map(nodes, nodeRadius);
   const W = typeof linkStrokeWidth !== "function" ? null : d3.map(links, linkStrokeWidth);
   const L = typeof linkStroke !== "function" ? null : d3.map(links, linkStroke);
-
   // Replace the input nodes and links with mutable objects for the simulation.
   nodes = d3.map(nodes, (_, i) => ({id: N[i]}));
   links = d3.map(links, (_, i) => ({source: LS[i], target: LT[i]}));
@@ -51,22 +50,22 @@ function ForceGraph({
   const color = nodeGroup == null ? null : d3.scaleOrdinal(nodeGroups, colors);
 
   // Construct the forces.
-  const forceNode = d3.forceManyBody();
+  const forceNode = d3.forceManyBody().strength(-20);
   const forceLink = d3.forceLink(links).id(({index: i}) => N[i]);
   if (nodeStrength !== undefined) forceNode.strength(nodeStrength);
   if (linkStrength !== undefined) forceLink.strength(linkStrength);
-
-  const simulation = d3.forceSimulation(nodes)
+  
+  const simulation = d3.forceSimulation(nodes)// .alphaDecay(0.2)
       .force("link", forceLink)
       .force("charge", forceNode)
-      .force("center",  d3.forceCenter())
+      .force("center",  d3.forceCenter()) // .strength(-10) 
       .on("tick", ticked);
 
   const svg = d3.create("svg")
       .attr("width", width)
       .attr("height", height)
       .attr("viewBox", [-width / 2, -height / 2, width, height])
-      .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
+      .attr("style", "max-width: 100%; height: auto; height: intrinsic; border: solid black 1px;");
 
   const link = svg.append("g")
       .attr("stroke", typeof linkStroke !== "function" ? linkStroke : null)
@@ -85,9 +84,15 @@ function ForceGraph({
     .selectAll("circle")
     .data(nodes)
     .join("circle")
-    //   .attr("r", nodeRadius)
-      .attr("r", nodeRadius)
+      .attr("r", d => (d.value !== NaN) ? d.value : 5)
       .call(drag(simulation));
+
+  // const texts = svg.selectAll("text.label")
+  //   .data(nodes)
+  //   .enter().append("text")
+  //   .attr("class", "node-label")
+  //   .attr("fill", "black")
+  //   .text(d => d.id)
 
   if (R) node.attr("r", ({index: i}) => R[i]);
   if (W) link.attr("stroke-width", ({index: i}) => W[i]);
@@ -101,15 +106,26 @@ function ForceGraph({
   }
 
   function ticked() {
+
+    let max_left = -1*width/2+10
+    let max_right = width/2-10
+    console.log("height", height)
+    let max_bottom = -1*height/2+10
+    let max_top = height/2-10
+    
     link
-      .attr("x1", d => d.source.x)
-      .attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x)
-      .attr("y2", d => d.target.y);
+      .attr("x1", d => Math.max(max_left, Math.min(max_right, d.source.x)))
+      .attr("y1", d => Math.max(max_bottom, Math.min(max_top, d.source.y)))
+      .attr("x2", d => Math.max(max_left, Math.min(max_right, d.target.x)))
+      .attr("y2", d => Math.max(max_bottom, Math.min(max_top, d.target.y)))
 
     node
-      .attr("cx", d => d.x)
-      .attr("cy", d => d.y);
+      .attr("cx", d => Math.max(max_left, Math.min(max_right, d.x)))
+      .attr("cy", d => Math.max(max_bottom, Math.min(max_top, d.y)));
+
+    // texts.attr("transform", function(d) {
+    //   return "translate(" + Math.max(max_left, Math.min(max_right, d.x)) + "," + Math.max(max_bottom, Math.min(max_top, d.y)) + ")";
+    // })
   }
 
   function drag(simulation) {    

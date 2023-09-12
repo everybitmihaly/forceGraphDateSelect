@@ -79,10 +79,9 @@ function dateSlider(startDate, endDate, data, graphSvg) {
         svg.node().value = s.map(function(d) {var temp = x.invert(d); return +temp});
         svg.node().dispatchEvent(new Event("input"));
         
-        const filteredData = filter(data, labelLdate, labelRdate)
-        console.log('THIS', filteredData)
-
-        const graph = ForceGraph(filteredData)
+        // const filteredData = filter(data, labelLdate, labelRdate)
+        const filteredData = filterWithWeights(data, labelLdate, labelRdate)
+        const graph = ForceGraph(filteredData, {nodeRadius: d => d.value})
 
         const chartDiv = d3.select("#chart")
         chartDiv.selectAll('*').remove()
